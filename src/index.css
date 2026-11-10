@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-tiro: 'Tiro Bangla', serif;
+  --font-bengali: 'Hind Siliguri', 'Tiro Bangla', sans-serif;
+  --font-brand: 'Plus Jakarta Sans', sans-serif;
+}
+
+:root {
+  font-family: 'Hind Siliguri', 'Tiro Bangla', sans-serif;
+}
+
+h1, h2, h3, .font-tiro {
+  font-family: 'Tiro Bangla', serif;
+}
+
+/* Custom scrollbar and smooth transitions */
+html {
+  scroll-behavior: smooth;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}

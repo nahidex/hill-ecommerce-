@@ -1,0 +1,6 @@
+{
+  "name": "Hill eCommerce - পার্বত্য ডিজিটাল মার্কেটপ্লেস",
+  "description": "পার্বত্য চট্টগ্রাম বিষয়ক মন্ত্রণালয়ের উদ্যোগে উৎপাদক ও পাইকারি ক্রেতাদের জন্য ডিজিটাল মার্কেটপ্লেস।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
