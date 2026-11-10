@@ -79,9 +79,9 @@ export const ProfileModule: React.FC<ProfileModuleProps> = ({ user, onUpdateUser
         {/* Cover Strip */}
         <div className="h-28 bg-gradient-to-r from-emerald-950 via-emerald-800 to-stone-900"></div>
 
-        <div className="px-6 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12">
+        <div className="px-6 pb-6 pt-4 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="flex items-end gap-4">
-            <div className="w-24 h-24 rounded-2xl bg-white p-1 shadow-lg border border-stone-200 shrink-0 relative">
+            <div className="w-24 h-24 -mt-14 rounded-2xl bg-white p-1 shadow-lg border border-stone-200 shrink-0 relative">
               <div className="w-full h-full rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-amber-300 flex items-center justify-center font-bold text-3xl font-brand">
                 {name.slice(0, 2)}
               </div>

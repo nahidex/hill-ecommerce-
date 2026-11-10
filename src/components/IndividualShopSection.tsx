@@ -116,9 +116,9 @@ export const IndividualShopSection: React.FC<IndividualShopSectionProps> = ({ on
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 to-transparent"></div>
                 </div>
 
-                <div className="px-6 pb-4 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10">
-                  <div className="flex items-end gap-3.5">
-                    <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-md border border-stone-200 shrink-0 overflow-hidden">
+                <div className="px-6 pb-4 pt-2 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-20 h-20 -mt-10 rounded-2xl bg-white p-1 shadow-md border border-stone-200 shrink-0 overflow-hidden">
                       <div className="w-full h-full rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-2xl font-brand">
                         MC
                       </div>

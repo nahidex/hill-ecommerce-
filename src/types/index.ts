@@ -1,4 +1,4 @@
-export type PageView = 'home' | 'signup' | 'login' | 'dashboard' | 'marketplace';
+export type PageView = 'home' | 'signup' | 'login' | 'dashboard' | 'marketplace' | 'shop-page';
 
 export type AccountType = 'farmer' | 'supplier' | 'buyer' | 'entrepreneur' | 'ministry_admin';
 

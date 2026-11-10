@@ -28,6 +28,7 @@ import { Footer } from './components/Footer';
 import { RegistrationPage } from './pages/RegistrationPage';
 import { LoginPage } from './pages/LoginPage';
 import { MarketplacePage } from './pages/MarketplacePage';
+import { ShopPage } from './pages/ShopPage';
 
 // Dashboard Components
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
@@ -128,6 +129,23 @@ export default function App() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isRFQModalOpen, setIsRFQModalOpen] = useState(false);
   const [isShopPreviewOpen, setIsShopPreviewOpen] = useState(false);
+
+  // Standalone shop page (opened in a new tab from the shop preview modal)
+  const [shopPageUser, setShopPageUser] = useState<UserSession | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shopParam = params.get('shop');
+    if (shopParam) {
+      try {
+        const parsedUser = JSON.parse(decodeURIComponent(shopParam)) as UserSession;
+        setShopPageUser(parsedUser);
+        setCurrentPage('shop-page');
+      } catch {
+        // ignore malformed shop param
+      }
+    }
+  }, []);
 
   // Navigation Handler
   const handleNavigate = (page: PageView, sectionId?: string) => {
@@ -1765,6 +1783,11 @@ export default function App() {
           products={products}
           onSubmitRFQ={handleSubmitRFQ}
         />
+      )}
+
+      {/* 6. STANDALONE SHOP PAGE (opened in a new tab from the shop preview modal) */}
+      {currentPage === 'shop-page' && shopPageUser && (
+        <ShopPage user={shopPageUser} />
       )}
 
       {/* Global Modals for Dashboard and Public */}
