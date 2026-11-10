@@ -1,10 +1,10 @@
 import { ProductItem, CategoryInfo, SellerProfile } from '../types';
 
-export const HERO_IMAGE = '/public/images/hero_hill_harvest_1794320369649.jpg';
-export const PINEAPPLE_IMAGE = '/public/images/product_hill_pineapple_1794320370891.jpg';
-export const SPICES_IMAGE = '/public/images/product_hill_spices_1794320372342.jpg';
-export const HANDLOOM_IMAGE = '/public/images/product_hill_handloom_1794320372286.jpg';
-export const MANGO_IMAGE = '/public/images/hill_mango_harvest_1794322424980.jpg';
+export const HERO_IMAGE = '/images/hero_hill_harvest_1794320369649.jpg';
+export const PINEAPPLE_IMAGE = '/images/product_hill_pineapple_1794320370891.jpg';
+export const SPICES_IMAGE = '/images/product_hill_spices_1794320372342.jpg';
+export const HANDLOOM_IMAGE = '/images/product_hill_handloom_1794320372286.jpg';
+export const MANGO_IMAGE = '/images/hill_mango_harvest_1794322424980.jpg';
 
 export const SELLER_PROFILES: Record<string, SellerProfile> = {
   'seller-01': {
