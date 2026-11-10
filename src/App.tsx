@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ShieldCheck, Truck } from 'lucide-react';
 import { PageView, AccountType, ProductItem, DashboardTab, UserSession, OrderItem, RFQItem, TransactionItem, NotificationItem } from './types';
 import { SAMPLE_PRODUCTS } from './data/products';
 import { 
@@ -64,6 +65,32 @@ import { MinistryMonitoringView } from './components/logistics/MinistryMonitorin
 import { DeliveryDetailsModal } from './components/logistics/DeliveryDetailsModal';
 import { LogisticsReportsModal } from './components/logistics/LogisticsReportsModal';
 
+// Phase 7: Payment, Escrow & Secure Transactions
+import { 
+  EscrowRecord, 
+  EscrowStatusKey,
+  BuyerPaymentTransaction, 
+  SellerSettlementItem, 
+  RefundRecord, 
+  FinancialDisputeRecord, 
+  PaymentMethodType 
+} from './types';
+import { 
+  INITIAL_ESCROWS, 
+  INITIAL_BUYER_PAYMENTS, 
+  INITIAL_SELLER_SETTLEMENTS, 
+  INITIAL_REFUNDS, 
+  INITIAL_FINANCIAL_DISPUTES 
+} from './data/escrowMock';
+import { BuyerPaymentModal } from './components/payment/BuyerPaymentModal';
+import { MinistryFinancialDashboard } from './components/payment/MinistryFinancialDashboard';
+import { FinancialReportsModal } from './components/payment/FinancialReportsModal';
+
+// Phase 8: Ministry Admin Panel, User Verification & Monitoring System
+import { AdminUserItem, ProductApprovalStatus, VerificationStatusKey } from './types';
+import { SAMPLE_ADMIN_USERS } from './data/adminMock';
+import { MinistryAdminPanel } from './components/admin/MinistryAdminPanel';
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -78,6 +105,19 @@ export default function App() {
   const [transactions, setTransactions] = useState<TransactionItem[]>(INITIAL_TRANSACTIONS);
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [deliveries, setDeliveries] = useState<DeliveryItem[]>(INITIAL_DELIVERIES);
+
+  // Phase 7: Financial & Escrow State
+  const [escrows, setEscrows] = useState<EscrowRecord[]>(INITIAL_ESCROWS);
+  const [buyerPayments, setBuyerPayments] = useState<BuyerPaymentTransaction[]>(INITIAL_BUYER_PAYMENTS);
+  const [settlements, setSettlements] = useState<SellerSettlementItem[]>(INITIAL_SELLER_SETTLEMENTS);
+  const [refunds, setRefunds] = useState<RefundRecord[]>(INITIAL_REFUNDS);
+  const [financialDisputes, setFinancialDisputes] = useState<FinancialDisputeRecord[]>(INITIAL_FINANCIAL_DISPUTES);
+  const [orderForPayment, setOrderForPayment] = useState<OrderItem | null>(null);
+  const [ministrySubView, setMinistrySubView] = useState<'finance' | 'logistics'>('finance');
+  const [isMinistryFinReportsOpen, setIsMinistryFinReportsOpen] = useState(false);
+
+  // Phase 8: Ministry Admin & User Verification State
+  const [adminUsers, setAdminUsers] = useState<AdminUserItem[]>(SAMPLE_ADMIN_USERS);
 
   // Modals & Inspection
   const [ministryInspectedDelivery, setMinistryInspectedDelivery] = useState<DeliveryItem | null>(null);
@@ -758,6 +798,549 @@ export default function App() {
     }));
   };
 
+  // ============================================================
+  // Phase 7: Payment, Escrow & Financial Management Handlers
+  // ============================================================
+
+  // Complete Buyer Payment (§4)
+  const handleCompleteBuyerPayment = (paymentData: {
+    orderId: string;
+    orderNumber: string;
+    amount: number;
+    paymentMethod: PaymentMethodType;
+    providerName: string;
+    transactionRef: string;
+  }) => {
+    const methodLabels: Record<PaymentMethodType, string> = {
+      bank_transfer: 'সোনালী ব্যাংক পিএলসি (RTGS/EFT)',
+      mfs_bkash: 'বিকাশ এগ্রো পেমেন্ট গেটওয়ে',
+      mfs_nagad: 'নগদ ডিজিটাল ওয়ালেট',
+      card_gateway: 'ব্র্যাক ব্যাংক ভিসা / মাস্টারকার্ড গেটওয়ে',
+      other_approved: 'অনুমোদিত ডিজিটাল পেমেন্ট'
+    };
+
+    const newEscrowNo = `ESC-2026-${Math.floor(800 + Math.random() * 100)}`;
+    const newTxNo = `TXN-${Math.floor(10000 + Math.random() * 90000)}`;
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    // 1. Update Order status
+    setOrders(prev => prev.map(o => {
+      if (o.id === paymentData.orderId || o.orderNumber === paymentData.orderNumber) {
+        return {
+          ...o,
+          status: 'processing',
+          stage: 'confirmed',
+          escrowStatus: 'in_escrow',
+          escrowId: newEscrowNo
+        };
+      }
+      return o;
+    }));
+
+    // 2. Create Escrow Record
+    const newEscrow: EscrowRecord = {
+      id: `esc-${Date.now()}`,
+      escrowNumber: newEscrowNo,
+      orderId: paymentData.orderId,
+      orderNumber: paymentData.orderNumber,
+      buyerId: currentUser.id,
+      buyerName: currentUser.name,
+      buyerCompany: currentUser.businessName || currentUser.name,
+      sellerId: 'user-farmer-01',
+      sellerName: 'মং শৈ প্রু মারমা',
+      sellerCompany: 'মারমা অর্গানিক ফার্মস',
+      productName: 'পাহাড়ি এগ্রো লট',
+      quantity: 1,
+      unit: 'লট',
+      productAmount: paymentData.amount - 5000,
+      deliveryCost: 4500,
+      otherCost: 500,
+      totalAmount: paymentData.amount,
+      depositDate: dateNow,
+      status: 'funds_secured',
+      statusLabel: 'অর্থ সুরক্ষিত (এসক্রো ট্রাস্টে জমা)',
+      releaseConditions: {
+        deliveryConfirmed: false,
+        grnVerified: false,
+        noActiveDispute: true,
+        agreedAmountVerified: true
+      },
+      expectedReleaseDate: 'ডেলিভারি সাপেক্ষে',
+      providerId: 'prov-sonali',
+      providerName: paymentData.providerName,
+      transactionRef: paymentData.transactionRef,
+      platformFee: Math.round(paymentData.amount * 0.005),
+      bankCharge: 200,
+      netSellerPayout: paymentData.amount - Math.round(paymentData.amount * 0.005) - 200,
+      auditTrail: [
+        {
+          id: `aud-${Date.now()}`,
+          timestamp: dateNow,
+          actor: currentUser.name,
+          actorRole: 'পাইকারি ক্রেতা',
+          action: 'এসক্রো ট্রাস্ট ডিপোজিট সম্পন্ন',
+          details: `${paymentData.providerName} মাধ্যমে ৳${paymentData.amount.toLocaleString('bn-BD')} এসক্রো ট্রাস্ট অ্যাকাউন্টে জমা।`,
+          transactionRef: paymentData.transactionRef
+        }
+      ]
+    };
+    setEscrows(prev => [newEscrow, ...prev]);
+
+    // 3. Create Buyer Transaction
+    const newTx: BuyerPaymentTransaction = {
+      id: `bpt-${Date.now()}`,
+      transactionNumber: newTxNo,
+      orderNumber: paymentData.orderNumber,
+      escrowNumber: newEscrowNo,
+      sellerName: 'মং শৈ প্রু মারমা',
+      productName: 'পাহাড়ি এগ্রো লট',
+      quantity: 1,
+      unit: 'লট',
+      amount: paymentData.amount,
+      paymentMethod: paymentData.paymentMethod,
+      paymentMethodLabel: methodLabels[paymentData.paymentMethod] || 'ডিজিটাল পেমেন্ট',
+      providerName: paymentData.providerName,
+      transactionDate: dateNow,
+      transactionRef: paymentData.transactionRef,
+      receiptNumber: `RCPT-2026-${Math.floor(5000 + Math.random() * 4000)}`,
+      status: 'in_escrow',
+      statusLabel: 'এসক্রোতে সংরক্ষিত',
+      isSimulated: true
+    };
+    setBuyerPayments(prev => [newTx, ...prev]);
+
+    // 4. Create Notification
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'পেমেন্ট সফল ও এসক্রো ট্রাস্টে সংরক্ষিত',
+      message: `${paymentData.orderNumber} অর্ডারে ৳${paymentData.amount.toLocaleString('bn-BD')} সফলভাবে সোনালী ব্যাংক এসক্রো ট্রাস্টে জমা হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'payment',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Confirm Escrow Release (§8)
+  const handleConfirmEscrowRelease = (escrowId: string, note: string) => {
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setEscrows(prev => prev.map(e => {
+      if (e.id === escrowId) {
+        const updatedAudit = [
+          ...e.auditTrail,
+          {
+            id: `aud-${Date.now()}`,
+            timestamp: dateNow,
+            actor: currentUser.name,
+            actorRole: currentUser.role === 'buyer' ? 'ক্রেতা' : 'মন্ত্রণালয় এসক্রো সেল',
+            action: 'অর্থ ছাড় অনুমোদন',
+            details: note || 'GRN সন্তোষজনক পাওয়ার পর বিক্রেতার ব্যাংক হিসাবে অর্থ ছাড় কার্যকর।',
+            transactionRef: e.transactionRef
+          }
+        ];
+
+        return {
+          ...e,
+          status: 'released' as EscrowStatusKey,
+          statusLabel: 'অর্থ ছাড় সম্পন্ন (ব্যাংক ট্রান্সফার)',
+          actualReleaseDate: dateNow,
+          auditTrail: updatedAudit
+        };
+      }
+      return e;
+    }));
+
+    // Update Settlements
+    setSettlements(prev => prev.map(s => {
+      const matched = escrows.find(e => e.id === escrowId);
+      if (matched && (s.escrowNumber === matched.escrowNumber || s.orderNumber === matched.orderNumber)) {
+        return {
+          ...s,
+          status: 'released',
+          statusLabel: 'ব্যাংকে ছাড় সম্পন্ন',
+          releaseDate: dateNow
+        };
+      }
+      return s;
+    }));
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'এসক্রো অর্থ ছাড় সম্পন্ন',
+      message: `এসক্রো চুক্তির আওতায় বিক্রেতার ব্যাংক হিসাবে অর্থ সফলভাবে স্থানান্তরিত হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'payment',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Pause on Dispute (§8, §10)
+  const handlePauseEscrowDispute = (escrowId: string, reason: string) => {
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setEscrows(prev => prev.map(e => {
+      if (e.id === escrowId) {
+        const updatedAudit = [
+          ...e.auditTrail,
+          {
+            id: `aud-${Date.now()}`,
+            timestamp: dateNow,
+            actor: currentUser.name,
+            actorRole: 'পার্টি / সিস্টেম',
+            action: 'অর্থ ছাড় স্থগিত',
+            details: `বিরোধ ও অভিযোগের কারণে অর্থ ছাড় স্থগিত: ${reason}`,
+            transactionRef: e.transactionRef
+          }
+        ];
+
+        return {
+          ...e,
+          status: 'paused_dispute' as EscrowStatusKey,
+          statusLabel: 'বিরোধের কারণে অর্থ ছাড় স্থগিত',
+          releaseConditions: {
+            ...e.releaseConditions,
+            noActiveDispute: false
+          },
+          auditTrail: updatedAudit
+        };
+      }
+      return e;
+    }));
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'এসক্রো অর্থ ছাড় স্থগিত',
+      message: `বিরোধ দায়েরের প্রেক্ষিতে এসক্রো ট্রাস্টে অর্থ ছাড় সাময়িকভাবে স্থগিত রাখা হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'dispute',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Request Refund (§9)
+  const handleRequestRefund = (refundData: any) => {
+    const refNo = `RFD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newRefund: RefundRecord = {
+      id: `ref-${Date.now()}`,
+      refundNumber: refNo,
+      ...refundData,
+      status: 'under_review',
+      statusLabel: 'পর্যালোচনাধীন (ব্যাংক যাচাই)',
+      approvedBy: 'মন্ত্রণালয় এসক্রো সেল'
+    };
+
+    setRefunds(prev => [newRefund, ...prev]);
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `রিফান্ড আবেদন দাখিল: ${refNo}`,
+      message: `${refundData.orderNumber} অর্ডারে ৳${refundData.requestedAmount.toLocaleString('bn-BD')} রিফান্ড আবেদন জমা হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'payment',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Approve Refund (§9)
+  const handleApproveRefund = (refundId: string) => {
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    setRefunds(prev => prev.map(r => {
+      if (r.id === refundId) {
+        return {
+          ...r,
+          status: 'completed',
+          statusLabel: 'অর্থ ফেরত সম্পন্ন',
+          completionDate: dateNow,
+          approvedBy: 'সোনালী ব্যাংক এসক্রো ডেস্ক'
+        };
+      }
+      return r;
+    }));
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'রিফান্ড অর্থ ফেরত সম্পন্ন',
+      message: `অনুমোদিত ব্যাংক দ্বারা ক্রেতার একাউন্টে অর্থ ফেরত সফলভাবে সম্পন্ন হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'payment',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Submit Financial Dispute (§10)
+  const handleSubmitFinancialDispute = (disputeData: any) => {
+    const dspNo = `DSP-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const newDispute: FinancialDisputeRecord = {
+      id: `fdisp-${Date.now()}`,
+      disputeNumber: dspNo,
+      ...disputeData,
+      status: 'mediation',
+      statusLabel: 'মধ্যস্থতা ও সালিশি আলোচনাধীন',
+      history: [
+        {
+          date: new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric' }),
+          actor: currentUser.name,
+          action: 'বিরোধ দাখিল',
+          note: disputeData.description
+        }
+      ]
+    };
+
+    setFinancialDisputes(prev => [newDispute, ...prev]);
+
+    // Pause matching escrow
+    setEscrows(prev => prev.map(e => {
+      if (e.orderNumber === disputeData.orderNumber || e.escrowNumber === disputeData.escrowNumber) {
+        return {
+          ...e,
+          status: 'paused_dispute' as EscrowStatusKey,
+          statusLabel: 'বিরোধের কারণে অর্থ ছাড় স্থগিত',
+          releaseConditions: {
+            ...e.releaseConditions,
+            noActiveDispute: false
+          }
+        };
+      }
+      return e;
+    }));
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `নতুন আর্থিক বিরোধ দায়ের: ${dspNo}`,
+      message: `${disputeData.orderNumber} অর্ডারে বিরোধ দায়েরের ফলে এসক্রো ফান্ড লক রাখা হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'dispute',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Resolve Financial Dispute (§10)
+  const handleResolveFinancialDispute = (disputeId: string, summary: string) => {
+    setFinancialDisputes(prev => prev.map(d => {
+      if (d.id === disputeId) {
+        // unpause matching escrow
+        setEscrows(eprev => eprev.map(e => {
+          if (e.orderNumber === d.orderNumber || e.escrowNumber === d.escrowNumber) {
+            return {
+              ...e,
+              status: 'awaiting_release' as EscrowStatusKey,
+              statusLabel: 'বিরোধ নিষ্পত্তিকৃত (অর্থ ছাড়ের অপেক্ষায়)',
+              releaseConditions: {
+                ...e.releaseConditions,
+                noActiveDispute: true
+              }
+            };
+          }
+          return e;
+        }));
+
+        return {
+          ...d,
+          status: 'resolved',
+          statusLabel: 'মীমাংসিত ও নিষ্পত্তি সম্পন্ন',
+          resolutionSummary: summary,
+          history: [
+            ...d.history,
+            {
+              date: new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric' }),
+              actor: currentUser.name,
+              action: 'বিরোধ নিষ্পত্তি',
+              note: summary
+            }
+          ]
+        };
+      }
+      return d;
+    }));
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'বিরোধ সফলভাবে নিষ্পত্তি হয়েছে',
+      message: `মধ্যস্থতা সেলের সুপারিশ অনুসারে উভয় পক্ষের সম্মতিতে বিরোধ নিষ্পত্তি হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'payment',
+      unread: true,
+      linkTab: 'payments'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Phase 8: User Verification Handler
+  const handleUpdateUserVerification = (
+    userId: string,
+    action: 'approved' | 'correction_requested' | 'rejected' | 'suspended' | 'reactivated' | 'under_review',
+    reason: string,
+    notes?: string
+  ) => {
+    const actionLabels: Record<string, string> = {
+      approved: 'অনুমোদন কার্যকর',
+      correction_requested: 'সংশোধনের জন্য ফেরত',
+      rejected: 'নিবন্ধন প্রত্যাখ্যান',
+      suspended: 'অ্যাকাউন্ট সাময়িক স্থগিত',
+      reactivated: 'অ্যাকাউন্ট পুনরায় সক্রিয়',
+      under_review: 'যাচাই তদন্ত চলমান'
+    };
+
+    const statusMap: Record<string, VerificationStatusKey> = {
+      approved: 'approved',
+      correction_requested: 'correction_requested',
+      rejected: 'rejected',
+      suspended: 'suspended',
+      reactivated: 'approved',
+      under_review: 'under_review'
+    };
+
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setAdminUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        const newAudit = {
+          id: `aud-${Date.now()}`,
+          timestamp: dateNow,
+          officerName: currentUser.name || 'মো. শাহজাহান কবির (যুগ্মসচিব)',
+          officerRole: 'মন্ত্রণালয় সুপার অ্যাডমিন',
+          action,
+          actionLabel: actionLabels[action] || 'প্রশাসনিক সিদ্ধান্ত',
+          reason,
+          notes
+        };
+
+        const newStatus = statusMap[action] || u.verificationStatus;
+
+        return {
+          ...u,
+          verificationStatus: newStatus,
+          verificationStatusLabel: actionLabels[action] || u.verificationStatusLabel,
+          auditHistory: [newAudit, ...u.auditHistory]
+        };
+      }
+      return u;
+    }));
+
+    const targetUser = adminUsers.find(u => u.id === userId);
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `প্রশাসনিক যাচাই: ${actionLabels[action]}`,
+      message: `${targetUser?.name || 'ব্যবহারকারী'} (${targetUser?.businessName || ''}) এর জন্য সিদ্ধান্ত কার্যকর হয়েছে (${reason})।`,
+      time: 'এইমাত্র',
+      type: 'rfq',
+      unread: true,
+      linkTab: 'ministry_monitor'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Phase 8: Product Approval Handler
+  const handleUpdateProductApproval = (
+    productId: string,
+    action: 'approved' | 'needs_correction' | 'rejected' | 'suspended',
+    reason: string,
+    notes?: string
+  ) => {
+    const actionLabels: Record<string, string> = {
+      approved: 'পণ্য অনুমোদন কার্যকর',
+      needs_correction: 'সংশোধনে প্রেরণ',
+      rejected: 'পণ্য ক্যাটালগ বাতিল',
+      suspended: 'বাজার প্রদর্শন স্থগিত'
+    };
+
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setProducts(prev => prev.map(p => {
+      if (p.id === productId) {
+        const newAudit = {
+          id: `paud-${Date.now()}`,
+          timestamp: dateNow,
+          officerName: currentUser.name || 'সাদিয়া আফরিন মিলি',
+          officerRole: 'পণ্য ও বাজার তদারক কর্মকর্তা',
+          action,
+          actionLabel: actionLabels[action] || 'সিদ্ধান্ত',
+          reason,
+          notes
+        };
+
+        const existingAudit = p.approvalAuditHistory || [];
+
+        return {
+          ...p,
+          approvalStatus: action as ProductApprovalStatus,
+          status: action === 'approved' ? 'active' : action === 'suspended' ? 'out_of_stock' : 'pending_approval',
+          approvalAuditHistory: [newAudit, ...existingAudit]
+        };
+      }
+      return p;
+    }));
+
+    const prod = products.find(p => p.id === productId);
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `পণ্য তদারকি: ${actionLabels[action]}`,
+      message: `${prod?.name || 'পণ্য'} এর অনুমোদন স্ট্যাটাস হালনাগাদ করা হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'order',
+      unread: true,
+      linkTab: 'ministry_monitor'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Phase 8: Profile Update Handler
+  const handleUpdateUserProfile = (
+    userId: string,
+    updatedData: Partial<AdminUserItem>,
+    auditReason: string
+  ) => {
+    const dateNow = new Date().toLocaleDateString('bn-BD', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setAdminUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        const newAudit = {
+          id: `aud-${Date.now()}`,
+          timestamp: dateNow,
+          officerName: currentUser.name || 'মো. শাহজাহান কবির (যুগ্মসচিব)',
+          officerRole: 'মন্ত্রণালয় সুপার অ্যাডমিন',
+          action: 'under_review' as any,
+          actionLabel: 'প্রশাসনিক তথ্য সংশোধন',
+          reason: auditReason,
+          notes: 'কর্তৃপক্ষ কর্তৃক প্রোফাইল হালনাগাদ'
+        };
+
+        return {
+          ...u,
+          ...updatedData,
+          auditHistory: [newAudit, ...u.auditHistory]
+        };
+      }
+      return u;
+    }));
+
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'ব্যবহারকারী প্রোফাইল হালনাগাদ',
+      message: `আইডি ${userId} এর তথ্য ও অডিট লগ সফলভাবে সংরক্ষণ করা হয়েছে।`,
+      time: 'এইমাত্র',
+      type: 'rfq',
+      unread: true,
+      linkTab: 'ministry_monitor'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col text-stone-900 font-bengali">
       
@@ -887,6 +1470,7 @@ export default function App() {
                   onOpenMessages={() => setActiveDashboardTab('messages')}
                   onViewPayments={() => setActiveDashboardTab('payments')}
                   onConfirmDeliveryAndReleaseEscrow={handleConfirmDeliveryAndReleaseEscrow}
+                  onInitiatePayment={(ord) => setOrderForPayment(ord)}
                 />
               )}
 
@@ -900,6 +1484,26 @@ export default function App() {
                   onOpenMessages={() => setActiveDashboardTab('messages')}
                   onViewPayments={() => setActiveDashboardTab('payments')}
                   onUpdateShopInfo={handleUpdateShopInfo}
+                />
+              )}
+
+              {currentUser.role === 'ministry_admin' && (
+                <MinistryAdminPanel
+                  users={adminUsers}
+                  products={products}
+                  orders={orders}
+                  escrows={escrows}
+                  transactions={buyerPayments}
+                  settlements={settlements}
+                  refunds={refunds}
+                  disputes={financialDisputes}
+                  deliveries={deliveries}
+                  onUpdateUserVerification={handleUpdateUserVerification}
+                  onUpdateProductApproval={handleUpdateProductApproval}
+                  onUpdateUserProfile={handleUpdateUserProfile}
+                  onViewDeliveryDetails={(del) => setMinistryInspectedDelivery(del)}
+                  onOpenFinancialReports={() => setIsMinistryFinReportsOpen(true)}
+                  onOpenLogisticsReports={() => setIsMinistryReportsOpen(true)}
                 />
               )}
             </>
@@ -950,6 +1554,7 @@ export default function App() {
                 onRejectOffer={handleRejectOffer}
                 onAcceptQuotation={handleAcceptQuotation}
                 onCancelOrder={handleCancelOrder}
+                onInitiatePayment={(ord) => setOrderForPayment(ord)}
               />
             ) : (
               <SellerOrderManagementModule
@@ -991,12 +1596,24 @@ export default function App() {
             )
           )}
 
-          {/* TAB: MINISTRY MONITORING OVERVIEW (PHASE 6 INTEGRATION) */}
+          {/* TAB: MINISTRY ADMIN, USER VERIFICATION & MONITORING PANEL (PHASE 8 INTEGRATION) */}
           {activeDashboardTab === 'ministry_monitor' && (
-            <MinistryMonitoringView
+            <MinistryAdminPanel
+              users={adminUsers}
+              products={products}
+              orders={orders}
+              escrows={escrows}
+              transactions={buyerPayments}
+              settlements={settlements}
+              refunds={refunds}
+              disputes={financialDisputes}
               deliveries={deliveries}
-              onViewDelivery={(del) => setMinistryInspectedDelivery(del)}
-              onOpenReports={() => setIsMinistryReportsOpen(true)}
+              onUpdateUserVerification={handleUpdateUserVerification}
+              onUpdateProductApproval={handleUpdateProductApproval}
+              onUpdateUserProfile={handleUpdateUserProfile}
+              onViewDeliveryDetails={(del) => setMinistryInspectedDelivery(del)}
+              onOpenFinancialReports={() => setIsMinistryFinReportsOpen(true)}
+              onOpenLogisticsReports={() => setIsMinistryReportsOpen(true)}
             />
           )}
 
@@ -1072,11 +1689,22 @@ export default function App() {
             />
           )}
 
-          {/* TAB: PAYMENTS */}
+          {/* TAB: PAYMENTS (PHASE 7 INTEGRATION) */}
           {activeDashboardTab === 'payments' && (
             <PaymentModule
               user={currentUser}
               transactions={transactions}
+              escrows={escrows}
+              buyerPayments={buyerPayments}
+              settlements={settlements}
+              refunds={refunds}
+              disputes={financialDisputes}
+              onConfirmRelease={handleConfirmEscrowRelease}
+              onPauseDispute={handlePauseEscrowDispute}
+              onRequestRefund={handleRequestRefund}
+              onApproveRefund={handleApproveRefund}
+              onSubmitDispute={handleSubmitFinancialDispute}
+              onResolveDispute={handleResolveFinancialDispute}
             />
           )}
 
@@ -1181,6 +1809,29 @@ export default function App() {
         deliveries={deliveries}
         isOpen={isMinistryReportsOpen}
         onClose={() => setIsMinistryReportsOpen(false)}
+      />
+
+      {/* Buyer Payment Modal (Phase 7) */}
+      {orderForPayment && (
+        <BuyerPaymentModal
+          order={orderForPayment}
+          isOpen={!!orderForPayment}
+          onClose={() => setOrderForPayment(null)}
+          onCompletePayment={(paymentData) => {
+            handleCompleteBuyerPayment(paymentData);
+            setOrderForPayment(null);
+          }}
+        />
+      )}
+
+      {/* Ministry Financial Reports Modal (Phase 7) */}
+      <FinancialReportsModal
+        escrows={escrows}
+        transactions={buyerPayments}
+        settlements={settlements}
+        refunds={refunds}
+        isOpen={isMinistryFinReportsOpen}
+        onClose={() => setIsMinistryFinReportsOpen(false)}
       />
 
     </div>

@@ -31,6 +31,7 @@ interface OrderDetailsModalProps {
   onAcceptOrder?: (orderId: string) => void;
   onRejectOrder?: (orderId: string, reason: string) => void;
   onCancelOrder?: (orderId: string, reason: string) => void;
+  onInitiatePayment?: (order: OrderItem) => void;
 }
 
 export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
@@ -44,7 +45,8 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onAdvanceStage,
   onAcceptOrder,
   onRejectOrder,
-  onCancelOrder
+  onCancelOrder,
+  onInitiatePayment
 }) => {
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
@@ -349,6 +351,20 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               >
                 <Check className="w-4 h-4 text-amber-300" />
                 <span>অর্ডার সম্পন্ন ও এসক্রো ছাড় অনুমোদন</span>
+              </button>
+            )}
+
+            {/* Buyer Payment Button */}
+            {isBuyer && (currentStage === 'confirmed' || order.escrowStatus === 'pending_deposit') && onInitiatePayment && (
+              <button
+                onClick={() => {
+                  onInitiatePayment(order);
+                  onClose();
+                }}
+                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer shadow-md"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-300" />
+                <span>নিরাপদ এসক্রো পেমেন্ট করুন</span>
               </button>
             )}
 

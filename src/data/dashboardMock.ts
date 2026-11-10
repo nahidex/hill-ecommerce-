@@ -66,6 +66,22 @@ export const DEMO_PROFILES: Record<AccountType, UserSession> = {
     businessName: 'মারমা উইভার্স অ্যান্ড হ্যান্ডলুম কালেক্টিভ',
     bio: 'কোমর তাঁতে বোনা ঐতিহ্যবাহী পাহাড়ি পিনন-হাদি, নকশী শাল ও পাকা বেতের সৌখিন আসবাব তৈরি ও বিক্রয় করি। আমাদের সাথে ৫০ জন পাহাড়ি নারী কারিগর কাজ করছেন।',
     joinedDate: 'এপ্রিল ২০২৬'
+  },
+  ministry_admin: {
+    id: 'user-admin-01',
+    name: 'মো. শাহজাহান কবির',
+    role: 'ministry_admin',
+    email: 'shahjahan.kabir@mochta.gov.bd',
+    mobile: '০১৭১৩-০০৪৪৫৫',
+    district: 'ঢাকা',
+    upazila: 'বাংলাদেশ সচিবালয়',
+    address: 'কক্ষ নং ৫১২, ভবন-৪, পার্বত্য চট্টগ্রাম বিষয়ক মন্ত্রণালয়, বাংলাদেশ সচিবালয়, ঢাকা',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    verified: true,
+    memberId: 'MOCHTA-ADMIN-01',
+    businessName: 'পার্বত্য চট্টগ্রাম বিষয়ক মন্ত্রণালয় (MoCHTA)',
+    bio: 'যুগ্মসচিব ও ফোকাল কর্মকর্তা, ডিজিটাল হিল ই-কমার্স প্রকল্প সেল, পার্বত্য চট্টগ্রাম বিষয়ক মন্ত্রণালয়।',
+    joinedDate: 'জানুয়ারি ২০২৬'
   }
 };
 

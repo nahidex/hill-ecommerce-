@@ -30,6 +30,7 @@ interface BuyerDashboardViewProps {
   onOpenMessages: () => void;
   onViewPayments: () => void;
   onConfirmDeliveryAndReleaseEscrow: (orderId: string) => void;
+  onInitiatePayment?: (order: OrderItem) => void;
 }
 
 export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
@@ -42,7 +43,8 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
   onOpenLogistics,
   onOpenMessages,
   onViewPayments,
-  onConfirmDeliveryAndReleaseEscrow
+  onConfirmDeliveryAndReleaseEscrow,
+  onInitiatePayment
 }) => {
   const [selectedOrderForDispute, setSelectedOrderForDispute] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
@@ -256,6 +258,17 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Pay order in escrow if confirmed or pending deposit */}
+                    {(order.stage === 'confirmed' || order.escrowStatus === 'pending_deposit') && onInitiatePayment && (
+                      <button
+                        onClick={() => onInitiatePayment(order)}
+                        className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-300" />
+                        <span>পেমেন্ট করুন (Escrow)</span>
+                      </button>
+                    )}
+
                     {/* Confirm receipt & release escrow button */}
                     {isShipped && (
                       <button

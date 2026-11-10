@@ -1,6 +1,6 @@
 export type PageView = 'home' | 'signup' | 'login' | 'dashboard' | 'marketplace';
 
-export type AccountType = 'farmer' | 'supplier' | 'buyer' | 'entrepreneur';
+export type AccountType = 'farmer' | 'supplier' | 'buyer' | 'entrepreneur' | 'ministry_admin';
 
 export type DashboardTab = 
   | 'overview' 
@@ -69,6 +69,8 @@ export interface ProductItem {
   galleryImages?: string[];
   badge?: string;
   status?: 'active' | 'out_of_stock' | 'pending_approval';
+  approvalStatus?: ProductApprovalStatus;
+  approvalAuditHistory?: ProductApprovalAuditEntry[];
   bulkPricingTiers?: BulkPriceTier[];
   specifications: {
     organic: boolean;
@@ -136,6 +138,7 @@ export interface OrderItem {
   buyerCompanyName?: string;
   sellerId?: string;
   sellerName?: string;
+  sellerCompany?: string;
   sellerPhone?: string;
   quantity: number;
   unit: string;
@@ -153,7 +156,7 @@ export interface OrderItem {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'negotiation';
   stage?: OrderStageKey;
   stageNumber?: number;
-  escrowStatus: 'deposited' | 'in_escrow' | 'released' | 'refunded';
+  escrowStatus: 'pending_deposit' | 'deposited' | 'in_escrow' | 'released' | 'refunded';
   activityHistory?: OrderActivityLog[];
   negotiationHistory?: NegotiationOffer[];
 }
@@ -485,5 +488,331 @@ export interface DeliveryItem {
   grn?: GoodsReceivedNote;
   issue?: DeliveryIssueItem;
   history: DeliveryHistoryLog[];
+}
+
+// ==========================================
+// Phase 7: Payment, Escrow & Transactions
+// ==========================================
+
+export type PaymentMethodType = 
+  | 'bank_transfer' 
+  | 'mfs_bkash' 
+  | 'mfs_nagad' 
+  | 'card_gateway' 
+  | 'other_approved';
+
+export type EscrowStatusKey = 
+  | 'awaiting_payment'
+  | 'payment_completed'
+  | 'funds_secured'
+  | 'in_transit'
+  | 'awaiting_receipt'
+  | 'awaiting_release'
+  | 'released'
+  | 'paused_dispute'
+  | 'refund_processing'
+  | 'refunded';
+
+export interface FinancialServiceProvider {
+  id: string;
+  name: string;
+  shortName: string;
+  type: 'commercial_bank' | 'mfs' | 'licensed_gateway';
+  typeLabel: string;
+  licenseNumber: string;
+  approvalStatus: 'approved' | 'in_review' | 'sandbox';
+  contactPhone: string;
+  contactEmail: string;
+  apiStatus: 'connected' | 'testing' | 'offline';
+  serviceEffectiveness: string;
+  escrowTrustAccount: string;
+  feeStructure: string;
+  isActive: boolean;
+}
+
+export interface PaymentAuditLog {
+  id: string;
+  timestamp: string;
+  actor: string;
+  actorRole: string;
+  action: string;
+  details: string;
+  transactionRef: string;
+  ipLocation?: string;
+}
+
+export interface EscrowRecord {
+  id: string;
+  escrowNumber: string;
+  orderId: string;
+  orderNumber: string;
+  challanNumber?: string;
+  deliveryId?: string;
+  buyerId: string;
+  buyerName: string;
+  buyerCompany: string;
+  sellerId: string;
+  sellerName: string;
+  sellerCompany: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+  productAmount: number;
+  deliveryCost: number;
+  otherCost: number;
+  totalAmount: number;
+  depositDate: string;
+  status: EscrowStatusKey;
+  statusLabel: string;
+  releaseConditions: {
+    deliveryConfirmed: boolean;
+    grnVerified: boolean;
+    noActiveDispute: boolean;
+    agreedAmountVerified: boolean;
+  };
+  expectedReleaseDate: string;
+  actualReleaseDate?: string;
+  providerId: string;
+  providerName: string;
+  transactionRef: string;
+  platformFee: number;
+  bankCharge: number;
+  netSellerPayout: number;
+  auditTrail: PaymentAuditLog[];
+}
+
+export interface BuyerPaymentTransaction {
+  id: string;
+  transactionNumber: string;
+  orderNumber: string;
+  escrowNumber: string;
+  buyerName?: string;
+  buyerCompany?: string;
+  sellerName: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+  amount: number;
+  paymentMethod: PaymentMethodType;
+  paymentMethodLabel: string;
+  providerName: string;
+  transactionDate: string;
+  transactionRef: string;
+  receiptNumber: string;
+  status: 'completed' | 'in_escrow' | 'pending' | 'refunded' | 'failed';
+  statusLabel: string;
+  isSimulated: boolean;
+}
+
+export interface SellerSettlementItem {
+  id: string;
+  settlementNumber: string;
+  transactionNumber: string;
+  orderNumber: string;
+  escrowNumber: string;
+  buyerName: string;
+  buyerCompany: string;
+  productName: string;
+  orderValue: number;
+  platformFeeAmount: number;
+  bankCharge: number;
+  netPayout: number;
+  status: 'pending' | 'ready_for_release' | 'released' | 'on_hold_dispute';
+  statusLabel: string;
+  releaseDate?: string;
+  bankAccountMasked: string;
+  statementDownloadRef: string;
+}
+
+export interface RefundRecord {
+  id: string;
+  refundNumber: string;
+  orderNumber: string;
+  originalTransactionRef: string;
+  buyerName: string;
+  sellerName: string;
+  originalAmount: number;
+  requestedAmount: number;
+  refundReason: string;
+  evidenceNote?: string;
+  status: 'requested' | 'under_review' | 'approved' | 'rejected' | 'processing' | 'completed';
+  statusLabel: string;
+  requestDate: string;
+  completionDate?: string;
+  approvedBy?: string;
+}
+
+export interface FinancialDisputeRecord {
+  id: string;
+  disputeNumber: string;
+  orderNumber: string;
+  transactionRef: string;
+  escrowNumber: string;
+  buyerName: string;
+  sellerName: string;
+  category: string;
+  description: string;
+  evidencePhotos: string[];
+  filingDate: string;
+  status: 'new' | 'under_review' | 'awaiting_buyer' | 'awaiting_seller' | 'mediation' | 'decision_pending' | 'resolved' | 'unresolved';
+  statusLabel: string;
+  buyerStatement?: string;
+  sellerStatement?: string;
+  mediatorRecommendation?: string;
+  resolutionSummary?: string;
+  history: { date: string; actor: string; action: string; note: string }[];
+}
+
+// ==========================================
+// PHASE 8: MINISTRY ADMIN, VERIFICATION & RBAC
+// ==========================================
+
+export type VerificationStatusKey = 
+  | 'new_registration' 
+  | 'pending_verification' 
+  | 'under_review' 
+  | 'approved' 
+  | 'correction_requested' 
+  | 'rejected' 
+  | 'suspended';
+
+export interface VerificationDocItem {
+  id: string;
+  title: string;
+  type: 'nid' | 'trade_license' | 'land_certificate' | 'farm_certificate' | 'sample_photo' | 'bank_statement';
+  documentNumberMasked: string;
+  issuedDate: string;
+  expiryDate?: string;
+  fileUrl: string;
+  verificationStatus: 'verified' | 'pending' | 'rejected';
+  notes?: string;
+}
+
+export interface UserVerificationAuditEntry {
+  id: string;
+  timestamp: string;
+  officerName: string;
+  officerRole: string;
+  action: 'approved' | 'correction_requested' | 'rejected' | 'suspended' | 'reactivated' | 'under_review';
+  actionLabel: string;
+  reason: string;
+  notes?: string;
+}
+
+export interface AdminUserItem {
+  id: string;
+  memberId: string;
+  name: string;
+  businessName: string;
+  role: AccountType;
+  roleLabel: string;
+  mobile: string;
+  email: string;
+  district: string;
+  upazila: string;
+  address: string;
+  joinedDate: string;
+  verificationStatus: VerificationStatusKey;
+  verificationStatusLabel: string;
+  avatar: string;
+  
+  // Specific category details
+  farmingAreaAcre?: number;
+  productionType?: string;
+  cropSpecialty?: string;
+  tradeLicenseNoMasked?: string;
+  warehouseCapacity?: string;
+  taxIdentificationNo?: string;
+  buyerType?: 'সুপারশপ চেইন' | 'পাইকারি আড়তদার' | 'আমদানি-রপ্তানিকারক' | 'খুচরা নেটওয়ার্ক';
+  annualTurnoverEstimated?: string;
+  productSpecialty?: string;
+  craftTradition?: string;
+  workshopAddress?: string;
+
+  // Documents and audit
+  documents: VerificationDocItem[];
+  auditHistory: UserVerificationAuditEntry[];
+
+  // Activity Metrics
+  listedProductCount: number;
+  ordersCount: number;
+  totalTransactionValue: number;
+  disputeCount: number;
+}
+
+export type ProductApprovalStatus = 
+  | 'approved' 
+  | 'pending_approval' 
+  | 'needs_correction' 
+  | 'rejected' 
+  | 'suspended';
+
+export interface ProductApprovalAuditEntry {
+  id: string;
+  timestamp: string;
+  officerName: string;
+  officerRole: string;
+  action: 'approved' | 'needs_correction' | 'rejected' | 'suspended';
+  actionLabel: string;
+  reason: string;
+  notes?: string;
+}
+
+export interface MinistryOfficer {
+  id: string;
+  name: string;
+  designation: string;
+  ministryRole: 'super_admin' | 'verification_officer' | 'product_inspector' | 'financial_auditor' | 'dispute_mediator';
+  ministryRoleLabel: string;
+  email: string;
+  mobile: string;
+  assignedDistrict: string;
+  status: 'active' | 'on_leave' | 'inactive';
+  lastActive: string;
+  permissions: string[];
+}
+
+export interface MinistryRBACPermission {
+  key: string;
+  name: string;
+  description: string;
+  category: 'users' | 'products' | 'finance' | 'logistics' | 'system';
+}
+
+export interface MinistryAdminSummary {
+  userStats: {
+    totalRegistered: number;
+    producers: number;
+    suppliers: number;
+    wholesaleBuyers: number;
+    entrepreneurs: number;
+    pendingVerification: number;
+    approved: number;
+    suspended: number;
+  };
+  marketplaceStats: {
+    totalListedProducts: number;
+    activeProducts: number;
+    pendingApprovalProducts: number;
+    totalWholesaleOrders: number;
+    ongoingOrders: number;
+    completedOrders: number;
+    activeRFQs: number;
+  };
+  transactionStats: {
+    totalVolumeAmount: number;
+    completedVolumeAmount: number;
+    escrowSecuredAmount: number;
+    pendingReleaseAmount: number;
+    refundedAmount: number;
+    disputedTransactionsCount: number;
+  };
+  logisticsStats: {
+    totalShipments: number;
+    deliveredShipments: number;
+    delayedShipments: number;
+    inTransitShipments: number;
+    logisticsComplaints: number;
+  };
 }
 

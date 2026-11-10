@@ -100,6 +100,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         return 'পাইকারি ক্রেতা';
       case 'entrepreneur':
         return 'ব্যক্তিগত উদ্যোক্তা';
+      case 'ministry_admin':
+        return 'মন্ত্রণালয় প্রশাসক';
     }
   };
 
@@ -143,6 +145,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   className={`px-1.5 py-0.5 rounded text-[10px] cursor-pointer ${user.role === 'entrepreneur' ? 'bg-amber-400 text-stone-950' : 'text-emerald-300 hover:text-white'}`}
                 >
                   উদ্যোক্তা
+                </button>
+                <span>·</span>
+                <button
+                  onClick={() => onSwitchRole('ministry_admin')}
+                  className={`px-1.5 py-0.5 rounded text-[10px] cursor-pointer font-bold ${user.role === 'ministry_admin' ? 'bg-amber-400 text-stone-950 shadow-xs' : 'text-amber-300 hover:text-white'}`}
+                >
+                  মন্ত্রণালয় প্রশাসক
                 </button>
               </div>
             </div>

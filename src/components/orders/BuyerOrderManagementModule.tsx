@@ -48,6 +48,7 @@ interface BuyerOrderManagementModuleProps {
   onRejectOffer: (orderId: string, reason: string) => void;
   onAcceptQuotation: (rfqId: string, quote: QuotationItem) => void;
   onCancelOrder: (orderId: string, reason: string) => void;
+  onInitiatePayment?: (order: OrderItem) => void;
 }
 
 export const BuyerOrderManagementModule: React.FC<BuyerOrderManagementModuleProps> = ({
@@ -60,7 +61,8 @@ export const BuyerOrderManagementModule: React.FC<BuyerOrderManagementModuleProp
   onAcceptPrice,
   onRejectOffer,
   onAcceptQuotation,
-  onCancelOrder
+  onCancelOrder,
+  onInitiatePayment
 }) => {
   // Navigation tabs within Buyer Order Management
   const [activeMainTab, setActiveMainTab] = useState<'orders' | 'rfqs' | 'quotations_compare' | 'negotiation_history'>('orders');
@@ -376,6 +378,17 @@ export const BuyerOrderManagementModule: React.FC<BuyerOrderManagementModuleProp
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-2 shrink-0 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-stone-100">
+                      {(stage === 'confirmed' || order.escrowStatus === 'pending_deposit') && onInitiatePayment && (
+                        <button
+                          onClick={() => onInitiatePayment(order)}
+                          className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold flex items-center justify-center gap-1 cursor-pointer shadow-xs animate-pulse"
+                          title="এসক্রো ট্রাস্টে পেমেন্ট করুন"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
+                          <span>পেমেন্ট</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => setDetailedOrder(order)}
                         className="flex-1 lg:flex-none px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-bold flex items-center justify-center gap-1 cursor-pointer"
@@ -575,6 +588,7 @@ export const BuyerOrderManagementModule: React.FC<BuyerOrderManagementModuleProp
         onOpenChat={(ord) => setChatOrder(ord)}
         onAdvanceStage={onAdvanceStage}
         onCancelOrder={onCancelOrder}
+        onInitiatePayment={onInitiatePayment}
       />
 
       <OrderPrintableInvoiceModal
