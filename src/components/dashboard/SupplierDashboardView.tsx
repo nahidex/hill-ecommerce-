@@ -17,6 +17,8 @@ import {
   Check
 } from 'lucide-react';
 import { UserSession, OrderItem, RFQItem, ProductItem } from '../../types';
+import { MiniLineChart } from '../charts/MiniLineChart';
+import { MiniDonutChart } from '../charts/MiniDonutChart';
 
 interface SupplierDashboardViewProps {
   user: UserSession;
@@ -51,6 +53,9 @@ export const SupplierDashboardView: React.FC<SupplierDashboardViewProps> = ({
   const completedOrders = orders.filter(o => o.status === 'delivered').length + 5;
   const totalSales = 345000;
   const netEarnings = 48200;
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+  const salesTrend = [0.42, 0.55, 0.64, 0.78, 0.9, 1].map(factor => Math.round(totalSales * factor));
 
   const handleSendQuote = (rfqId: string) => {
     setRfqList(prev => prev.map(item => {
@@ -121,7 +126,37 @@ export const SupplierDashboardView: React.FC<SupplierDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Warehouse & Supply Hub Banner */}
+      {/* 2. Analytics: Sales Trend & Order Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">মাসভিত্তিক বিক্রয়ের প্রবণতা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-2">গত ৬ মাসের মোট বিক্রয় টার্নওভার</p>
+          <MiniLineChart
+            categories={['মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর']}
+            series={[{ label: 'বিক্রয়', color: '#065f46', values: salesTrend }]}
+            formatValue={(v) => `৳${v.toLocaleString()}`}
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">অর্ডারের বর্তমান অবস্থা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-3">মোট {totalSalesOrders}টি অর্ডারের বিভাজন</p>
+          <MiniDonutChart
+            size={120}
+            strokeWidth={14}
+            centerValue={`${totalSalesOrders}`}
+            centerLabel="মোট অর্ডার"
+            data={[
+              { label: 'সম্পন্ন', value: completedOrders || 1, color: '#065f46' },
+              { label: 'চলমান', value: ongoingOrders, color: '#2563eb' },
+              { label: 'অপেক্ষমাণ', value: pendingOrders, color: '#d97706' },
+              { label: 'বাতিল', value: cancelledOrders, color: '#9f1239' }
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* 3. Warehouse & Supply Hub Banner */}
       <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
@@ -151,7 +186,7 @@ export const SupplierDashboardView: React.FC<SupplierDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Section Switcher Tabs */}
+      {/* 4. Section Switcher Tabs */}
       <div className="flex items-center gap-2 border-b border-stone-200 pb-3">
         <button
           onClick={() => setActiveTab('rfqs')}

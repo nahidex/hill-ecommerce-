@@ -10,6 +10,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { UserSession } from '../../types';
+import { MiniLineChart } from '../charts/MiniLineChart';
+import { MiniDonutChart } from '../charts/MiniDonutChart';
 
 interface ReportsModuleProps {
   user: UserSession;
@@ -31,10 +33,10 @@ export const ReportsModule: React.FC<ReportsModuleProps> = ({ user }) => {
   const maxSales = Math.max(...monthlyData.map(d => d.sales));
 
   const categoryShare = [
-    { name: 'ফলমূল (আনারস, কলা)', percent: 45, color: 'bg-emerald-600' },
-    { name: 'মসলা ও খাদ্যপণ্য (হলুদ, আদা)', percent: 30, color: 'bg-amber-500' },
-    { name: 'হস্তশিল্প ও বস্ত্র (পিনন-হাদি)', percent: 15, color: 'bg-emerald-900' },
-    { name: 'অন্যান্য (বাঁশ, মধু, কফি)', percent: 10, color: 'bg-stone-500' }
+    { name: 'ফলমূল (আনারস, কলা)', percent: 45, color: 'bg-emerald-600', hex: '#059669' },
+    { name: 'মসলা ও খাদ্যপণ্য (হলুদ, আদা)', percent: 30, color: 'bg-amber-500', hex: '#f59e0b' },
+    { name: 'হস্তশিল্প ও বস্ত্র (পিনন-হাদি)', percent: 15, color: 'bg-emerald-900', hex: '#064e3b' },
+    { name: 'অন্যান্য (বাঁশ, মধু, কফি)', percent: 10, color: 'bg-stone-500', hex: '#78716c' }
   ];
 
   const orderStatusBreakdown = [
@@ -159,36 +161,31 @@ export const ReportsModule: React.FC<ReportsModuleProps> = ({ user }) => {
         </div>
       </div>
 
+      {/* Orders Volume Trend Line Chart */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-2">
+        <h4 className="text-sm font-bold text-stone-900">মাসভিত্তিক অর্ডার সংখ্যার প্রবণতা</h4>
+        <p className="text-xs text-stone-500 mb-2">নির্বাচিত সময়সীমায় মোট সম্পন্ন অর্ডারের সংখ্যা</p>
+        <MiniLineChart
+          categories={monthlyData.map(d => d.month)}
+          series={[{ label: 'অর্ডার সংখ্যা', color: '#1d4ed8', values: monthlyData.map(d => d.orders) }]}
+          formatValue={(v) => `${v}টি`}
+        />
+      </div>
+
       {/* Two columns: Category Share & Order Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Category Share */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-4">
           <h4 className="text-sm font-bold text-stone-900">পণ্য ক্যাটাগরি অনুযায়ী আয়ের বণ্টন</h4>
-          
-          {/* Progress Stack */}
-          <div className="h-3 w-full rounded-full bg-stone-100 flex overflow-hidden">
-            {categoryShare.map((cat, i) => (
-              <div
-                key={i}
-                style={{ width: `${cat.percent}%` }}
-                className={`${cat.color}`}
-                title={`${cat.name}: ${cat.percent}%`}
-              />
-            ))}
-          </div>
 
-          <div className="space-y-2.5 pt-2">
-            {categoryShare.map((cat, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className={`w-3 h-3 rounded-full ${cat.color}`}></span>
-                  <span className="text-stone-700 font-medium">{cat.name}</span>
-                </div>
-                <span className="font-bold text-stone-900 tabular-nums">{cat.percent}%</span>
-              </div>
-            ))}
-          </div>
+          <MiniDonutChart
+            size={140}
+            strokeWidth={18}
+            centerValue="১০০%"
+            centerLabel="মোট আয়"
+            data={categoryShare.map(cat => ({ label: cat.name, value: cat.percent, color: cat.hex }))}
+          />
         </div>
 
         {/* Order Status Breakdown */}

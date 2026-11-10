@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { UserSession, ProductItem, OrderItem } from '../../types';
 import { HANDLOOM_IMAGE, SPICES_IMAGE } from '../../data/products';
+import { MiniLineChart } from '../charts/MiniLineChart';
+import { MiniDonutChart } from '../charts/MiniDonutChart';
 
 interface EntrepreneurDashboardViewProps {
   user: UserSession;
@@ -52,6 +54,8 @@ export const EntrepreneurDashboardView: React.FC<EntrepreneurDashboardViewProps>
   const completedOrders = orders.filter(o => o.status === 'delivered').length + 9;
   const totalSales = 186400;
   const shopVisitors = 3840;
+  const processingOrders = Math.max(totalOrders - newOrders - completedOrders, 0);
+  const salesTrend = [0.35, 0.48, 0.58, 0.7, 0.85, 1].map(factor => Math.round(totalSales * factor));
 
   const handleSaveShopSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +134,36 @@ export const EntrepreneurDashboardView: React.FC<EntrepreneurDashboardViewProps>
         </div>
       </div>
 
-      {/* 2. Shop Showcase Card & Preview Action */}
+      {/* 2. Analytics: Sales Trend & Order Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">মাসভিত্তিক দোকানের বিক্রয় প্রবণতা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-2">গত ৬ মাসের অনলাইন শপ বিক্রয় আয়</p>
+          <MiniLineChart
+            categories={['মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর']}
+            series={[{ label: 'বিক্রয়', color: '#b45309', values: salesTrend }]}
+            formatValue={(v) => `৳${v.toLocaleString()}`}
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">অর্ডারের বর্তমান অবস্থা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-3">মোট {totalOrders}টি অর্ডারের বিভাজন</p>
+          <MiniDonutChart
+            size={120}
+            strokeWidth={14}
+            centerValue={`${totalOrders}`}
+            centerLabel="মোট অর্ডার"
+            data={[
+              { label: 'সম্পন্ন', value: completedOrders || 1, color: '#065f46' },
+              { label: 'প্যাকিং/প্রসেসিং', value: processingOrders, color: '#2563eb' },
+              { label: 'নতুন', value: newOrders, color: '#d97706' }
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* 3. Shop Showcase Card & Preview Action */}
       <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
         <div className="p-6 bg-gradient-to-r from-emerald-900 via-emerald-800 to-stone-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -215,7 +248,7 @@ export const EntrepreneurDashboardView: React.FC<EntrepreneurDashboardViewProps>
         )}
       </div>
 
-      {/* 3. Products & Reviews Tabs */}
+      {/* 4. Products & Reviews Tabs */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
           <button

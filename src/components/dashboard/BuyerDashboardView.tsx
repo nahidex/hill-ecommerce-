@@ -18,6 +18,8 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { UserSession, OrderItem, RFQItem, ProductItem } from '../../types';
+import { MiniLineChart } from '../charts/MiniLineChart';
+import { MiniDonutChart } from '../charts/MiniDonutChart';
 
 interface BuyerDashboardViewProps {
   user: UserSession;
@@ -60,6 +62,11 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
   const escrowLockedAmount = orders
     .filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
     .reduce((sum, o) => sum + o.totalAmount, 0);
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+  const purchaseTrend = [0.4, 0.5, 0.62, 0.72, 0.85, 1].map(
+    factor => Math.round((totalPurchaseVolume || 60000) * factor)
+  );
 
   const handleOpenDispute = (orderId: string) => {
     setSelectedOrderForDispute(orderId);
@@ -135,7 +142,37 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Quick Action Buttons Strip */}
+      {/* 2. Analytics: Purchase Trend & Order Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">মাসভিত্তিক ক্রয়ের প্রবণতা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-2">গত ৬ মাসের মোট পাইকারি ক্রয়ের পরিমাণ</p>
+          <MiniLineChart
+            categories={['মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর']}
+            series={[{ label: 'ক্রয়', color: '#1d4ed8', values: purchaseTrend }]}
+            formatValue={(v) => `৳${v.toLocaleString()}`}
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">অর্ডারের বর্তমান অবস্থা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-3">মোট {orders.length}টি অর্ডারের বিভাজন</p>
+          <MiniDonutChart
+            size={120}
+            strokeWidth={14}
+            centerValue={`${orders.length}`}
+            centerLabel="মোট অর্ডার"
+            data={[
+              { label: 'সম্পন্ন', value: completedOrders || 1, color: '#065f46' },
+              { label: 'পরিবহনে', value: inTransitDelivery, color: '#2563eb' },
+              { label: 'অপেক্ষমাণ', value: pendingOrders, color: '#d97706' },
+              { label: 'বাতিল', value: cancelledOrders, color: '#9f1239' }
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* 3. Quick Action Buttons Strip */}
       <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-bold text-stone-900">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
@@ -197,7 +234,7 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Active Orders & Delivery Track */}
+      {/* 4. Active Orders & Delivery Track */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
@@ -314,7 +351,7 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 4. Active RFQs & Quotations received */}
+      {/* 5. Active RFQs & Quotations received */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-stone-200 flex items-center justify-between">
           <div>

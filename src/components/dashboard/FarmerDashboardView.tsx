@@ -20,6 +20,8 @@ import {
   Truck
 } from 'lucide-react';
 import { ProductItem, OrderItem, UserSession } from '../../types';
+import { MiniLineChart } from '../charts/MiniLineChart';
+import { MiniDonutChart } from '../charts/MiniDonutChart';
 
 interface FarmerDashboardViewProps {
   user: UserSession;
@@ -57,6 +59,13 @@ export const FarmerDashboardView: React.FC<FarmerDashboardViewProps> = ({
   const potentialIncome = orders
     .filter(o => o.status === 'processing' || o.status === 'pending')
     .reduce((sum, o) => sum + o.totalAmount, 0);
+  const inTransitOrders = orders.filter(o => o.status === 'shipped').length;
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+
+  // Illustrative 6-month revenue trend ending at the current snapshot
+  const revenueTrend = [0.38, 0.52, 0.6, 0.74, 0.86, 1].map(
+    factor => Math.round((totalSalesRevenue || 50000) * factor)
+  );
 
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(productSearch.toLowerCase());
@@ -130,7 +139,37 @@ export const FarmerDashboardView: React.FC<FarmerDashboardViewProps> = ({
 
       </div>
 
-      {/* 2. Quick Actions Banner */}
+      {/* 2. Analytics: Revenue Trend & Order Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">মাসভিত্তিক বিক্রয় আয়ের প্রবণতা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-2">গত ৬ মাসের পাইকারি বিক্রয় আয়ের গ্রাফিকাল চিত্র</p>
+          <MiniLineChart
+            categories={['মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর']}
+            series={[{ label: 'বিক্রয় আয়', color: '#065f46', values: revenueTrend }]}
+            formatValue={(v) => `৳${v.toLocaleString()}`}
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5">
+          <h3 className="text-sm font-bold text-stone-900">অর্ডারের বর্তমান অবস্থা</h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-3">মোট {totalSalesOrders}টি অর্ডারের বিভাজন</p>
+          <MiniDonutChart
+            size={120}
+            strokeWidth={14}
+            centerValue={`${totalSalesOrders}`}
+            centerLabel="মোট অর্ডার"
+            data={[
+              { label: 'সম্পন্ন', value: completedOrders || 1, color: '#065f46' },
+              { label: 'পরিবহনে', value: inTransitOrders, color: '#2563eb' },
+              { label: 'অপেক্ষমাণ', value: pendingOrders, color: '#d97706' },
+              { label: 'বাতিল', value: cancelledOrders, color: '#9f1239' }
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* 3. Quick Actions Banner */}
       <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-stone-900 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md">
         <div className="space-y-1">
           <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
@@ -163,7 +202,7 @@ export const FarmerDashboardView: React.FC<FarmerDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Product Listing Management Table */}
+      {/* 4. Product Listing Management Table */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-stone-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>

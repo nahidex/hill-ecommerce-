@@ -35,6 +35,8 @@ import {
   MINISTRY_ADMIN_SUMMARY_DATA, 
   MINISTRY_RECENT_AUDIT_ACTIVITIES 
 } from '../../data/adminMock';
+import { MiniLineChart } from '../charts/MiniLineChart';
+import { MiniDonutChart } from '../charts/MiniDonutChart';
 
 interface MinistryAdminDashboardProps {
   users: AdminUserItem[];
@@ -64,6 +66,17 @@ export const MinistryAdminDashboard: React.FC<MinistryAdminDashboardProps> = ({
   
   // Real or simulated summary values
   const stats = MINISTRY_ADMIN_SUMMARY_DATA;
+
+  // Illustrative 6-month platform-wide growth trend
+  const monthlyRegistrations = [720, 840, 910, 1020, 1140, 1248];
+  const monthlyTradeVolumeCrore = [2.1, 2.6, 3.2, 3.8, 4.3, 4.86];
+
+  const commodityShare = [
+    { label: 'পাহাড়ি ফলমূল', value: 42, color: '#047857' },
+    { label: 'মসলা ও অর্থকরী ফসল', value: 33, color: '#d97706' },
+    { label: 'তাঁত ও থামি পোশাক', value: 15, color: '#0d9488' },
+    { label: 'বাঁশ-বেত ও হস্তশিল্প', value: 10, color: '#57534e' }
+  ];
 
   // District statistics data
   const districtAnalytics = [
@@ -188,7 +201,36 @@ export const MinistryAdminDashboard: React.FC<MinistryAdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* 3. Four Core Administrative Summary Categories (§2) */}
+      {/* 3. Platform-wide Growth Trend */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5">
+          <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-800" />
+            <span>মাসভিত্তিক ব্যবহারকারী নিবন্ধনের প্রবৃদ্ধি</span>
+          </h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-2">গত ৬ মাসে সর্বমোট নিবন্ধিত ব্যবহারকারীর সংখ্যা</p>
+          <MiniLineChart
+            categories={['জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর']}
+            series={[{ label: 'নিবন্ধিত ব্যবহারকারী', color: '#065f46', values: monthlyRegistrations }]}
+            formatValue={(v) => `${v.toLocaleString()} জন`}
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5">
+          <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-emerald-800" />
+            <span>মাসভিত্তিক মোট বাণিজ্য লেনদেনের প্রবৃদ্ধি</span>
+          </h3>
+          <p className="text-xs text-stone-500 mt-0.5 mb-2">গত ৬ মাসে এসক্রোর মাধ্যমে সম্পন্ন মোট লেনদেন (কোটি টাকায়)</p>
+          <MiniLineChart
+            categories={['জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর']}
+            series={[{ label: 'লেনদেন', color: '#b45309', values: monthlyTradeVolumeCrore }]}
+            formatValue={(v) => `৳${v} কোটি`}
+          />
+        </div>
+      </div>
+
+      {/* 4. Four Core Administrative Summary Categories (§2) */}
 
       {/* Category A: User Statistics (ব্যবহারকারী পরিসংখ্যান - ৮টি কার্ড) */}
       <div className="space-y-3">
@@ -400,7 +442,7 @@ export const MinistryAdminDashboard: React.FC<MinistryAdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* 4. District-wise Performance & Analytics (§2) */}
+      {/* 5. District-wise Performance & Analytics (§2) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* District Overview Cards */}
@@ -459,7 +501,15 @@ export const MinistryAdminDashboard: React.FC<MinistryAdminDashboardProps> = ({
               <span>পণ্যভিত্তিক ভলিউম ও বাণিজ্য শেয়ার (Commodity Breakdown)</span>
             </h4>
 
-            <div className="space-y-2.5 text-xs">
+            <MiniDonutChart
+              size={128}
+              strokeWidth={16}
+              centerValue="৳৪.৮৬ কোটি"
+              centerLabel="মোট বাণিজ্য"
+              data={commodityShare}
+            />
+
+            <div className="space-y-2.5 text-xs pt-1">
               <div>
                 <div className="flex justify-between text-stone-700 mb-1">
                   <span>পাহাড়ি ফলমূল (আনারস, আম, ড্রাগন, পেঁপে, কলা)</span>
